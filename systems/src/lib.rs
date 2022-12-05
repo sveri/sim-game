@@ -1,24 +1,77 @@
 mod utilities;
 
 use bevy::{prelude::*, sprite::collide_aabb};
+// use components::Name as CompName;
 use components::*;
 use rand::{thread_rng, Rng};
 
-pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn_bundle(Camera2dBundle::default());
+use smooth_bevy_cameras::{
+    controllers::orbit::{OrbitCameraBundle, OrbitCameraController},
+    LookTransform, LookTransformBundle, Smoother,
+};
 
-    // player
-    let ship_handle = asset_server.load("textures/simplespace/ship_C.png");
+pub fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    // commands.spawn(Camera3dBundle {
+    //     transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+    //     ..default()
+    // }).insert(Name::new("Camera3d"));
+
+    let eye = Vec3::new(-2.0, 2.5, 5.0);
+    let target = Vec3::default();
+
     commands
-        .spawn_bundle(SpriteBundle {
-            texture: ship_handle,
+        .spawn(Camera3dBundle {
+            // camera_render_graph: CameraRenderGraph::new(bevy_strolle::graph::NAME),
+            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
         })
-        .insert(Player {
-            velocity: Vec3::ZERO,
-            rotation_speed: f32::to_radians(180.0),
-            shooting_timer: None,
-        });
+        .insert(OrbitCameraBundle::new(
+            {
+                let mut controller = OrbitCameraController::default();
+
+                controller.mouse_rotate_sensitivity = Vec2::ONE * 0.2;
+                controller.mouse_translate_sensitivity = Vec2::ONE * 0.5;
+
+                controller
+            },
+            Vec3::new(-20.0, 10.0, 20.0),
+            Vec3::ZERO,
+        ));
+
+    // commands
+    //     .spawn(LookTransformBundle {
+    //         // transform: LookTransform::new(eye, target),
+    //         transform: LookTransform::new(eye, target),
+    //         smoother: Smoother::new(0.9), // Value between 0.0 and 1.0, higher is smoother.
+    //     })
+    //     .insert(Camera3dBundle::default());
+
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
+        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        ..default()
+    });
+
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.9 })),
+        material: materials.add(Color::rgb(0.67, 0.84, 0.92).into()),
+        transform: Transform::from_xyz(0.0, 0.5, 0.0),
+        ..default()
+    });
+
+    commands.spawn((Galaxy, NameComponent("GalaxyOne".to_string())));
+    commands.spawn((Galaxy, NameComponent("GalaxyTwo".to_string())));
+}
+
+#[no_mangle]
+pub fn greet_galaxy(query: Query<&NameComponent, With<Galaxy>>) {
+    for name in query.iter() {
+        println!("hello {}", name.0);
+    }
 }
 
 #[no_mangle]

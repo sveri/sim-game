@@ -16,3 +16,11 @@ pub struct Player {
     pub rotation_speed: f32,
     pub shooting_timer: Option<Timer>,
 }
+
+#[derive(Component)]
+pub struct NameComponent(pub String);
+
+#[derive(Component)]
+pub struct Galaxy;
+
+

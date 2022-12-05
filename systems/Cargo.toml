@@ -7,7 +7,10 @@ edition = "2021"
 crate-type = ["rlib", "dylib"]
 
 [dependencies]
-bevy = { version = "0.8.0" }
+bevy = { version = "0.9.1" }
+
+smooth-bevy-cameras = "0.6.0"
+
 components = { path = "../components" }
 log = "0.4.17"
 rand = "0.8.5"
