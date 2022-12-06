@@ -51,22 +51,6 @@ pub fn setup(
         i += 1;
     }
 
-    // commands.spawn(PbrBundle {
-    //     mesh: meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
-    //     material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-    //     ..default()
-    // });
-
-    // commands.spawn((
-    //     PbrBundle {
-    //         mesh: meshes.add(Mesh::from(shape::Cube { size: 1.9 })),
-    //         material: materials.add(Color::rgb(0.67, 0.84, 0.92).into()),
-    //         transform: Transform::from_xyz(0.0, 0.5, 0.0),
-    //         ..default()
-    //     },
-    //     NameComponent("Cube 2".to_string()),
-    // ));
-
     commands.spawn((Galaxy, NameComponent("GalaxyOne".to_string())));
     commands.spawn((Galaxy, NameComponent("GalaxyTwo".to_string())));
 }
