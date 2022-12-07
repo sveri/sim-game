@@ -9,22 +9,12 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.9.1" }
-
 bevy-inspector-egui = "0.14.0"
-
-smooth-bevy-cameras = "0.6.0"
-
-components = { path = "components" }
-hot-lib-reloader = { version = "0.6.4", optional = true }
 rand = "0.8.5"
-systems = { path = "systems" }
 
-[features]
-default = []
-reload = [
-  "dep:hot-lib-reloader",
-  # Make sure that the types don't change:
-  "components/dynamic",
-  # This is important on windows for avoiding file locking issues:
-  "bevy/dynamic",
-]
+#smooth-bevy-cameras = "0.6.0"
+
+#components = { path = "components" }
+#hot-lib-reloader = { version = "0.6.4", optional = true }
+#systems = { path = "systems" }
+

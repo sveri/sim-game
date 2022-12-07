@@ -2,34 +2,110 @@ mod utilities;
 
 use std::f32::consts::PI;
 
-use bevy::{prelude::*, sprite::collide_aabb, render::render_resource::{Extent3d, TextureDimension, TextureFormat}};
+use bevy::{
+    input::mouse::{MouseMotion, MouseWheel},
+    prelude::*,
+    render::render_resource::{Extent3d, TextureDimension, TextureFormat},
+    sprite::collide_aabb,
+};
 // use components::Name as CompName;
 use components::*;
 use rand::{thread_rng, Rng};
 
-use smooth_bevy_cameras::controllers::orbit::{OrbitCameraBundle, OrbitCameraController};
+use smooth_bevy_cameras::controllers::orbit::{self, OrbitCameraBundle, OrbitCameraController};
+
+
+pub fn pan_orbit_camera(
+    windows: Res<Windows>, mut ev_emotion: EventReader<MouseMotion>, mut ev_scroll: EventReader<MouseWheel>,
+    input_mouse: Res<Input<MouseButton>>, mut query: Query<(&mut PanOrbitCamera, &mut Transform, &Projection)>,
+) {
+    let orbit_button = MouseButton::Right;
+    let pan_button = MouseButton::Middle;
+    let mut pan = Vec2::ZERO;
+    let mut rotation_move = Vec2::ZERO;
+    let scroll: f32 = 0.0;
+    let orbit_button_changed = false;
+
+    if input_mouse.pressed(orbit_button) {
+        print!("rigggght");
+        for ev in ev_emotion.iter() {
+            rotation_move += ev.delta;
+        }
+    } else if input_mouse.pressed(pan_button) {
+        for ev in ev_emotion.iter() {
+            pan += ev.delta;
+        }
+    }
+
+    for (mut pan_orbit, mut transform, projection) in query.iter_mut() {
+        if orbit_button_changed {
+            let up = transform.rotation * Vec3::Y;
+            pan_orbit.upside_down = up.y <= 0.0;
+        }
+
+        let mut any = false;
+        if rotation_move.length_squared() > 0.0 {
+            any = true;
+            let window = get_primary_window_size(&windows);
+            if let Projection::Perspective(projection) = projection {
+                pan *= Vec2::new(projection.fov * projection.aspect_ratio, projection.fov) / window;
+            }
+
+            let right = transform.rotation * Vec3::X * -pan.x;
+            let up = transform.rotation * Vec3::Y * pan.y;
+            let translation = (right + up) * pan_orbit.radius;
+            pan_orbit.focus += translation;
+        } else if scroll.abs() > 0.0 {
+            any = true;
+            pan_orbit.radius -= scroll * pan_orbit.radius * 0.2;
+            pan_orbit.radius = f32::max(pan_orbit.radius, 0.05);
+        }
+
+        if any {
+            let rot_matrix = Mat3::from_quat(transform.rotation);
+            transform.translation = pan_orbit.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, pan_orbit.radius));
+        }
+    }
+}
+
+
+fn get_primary_window_size(windows: &Res<Windows>) -> Vec2 {
+    let window = windows.get_primary().unwrap();
+    Vec2::new(window.width(), window.height())
+}
 
 pub fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut images: ResMut<Assets<Image>>,
+    mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    commands
-        .spawn(Camera3dBundle {
-            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+    let translation = Vec3::new(-2.0, 2.5, 5.0);
+    let radius = translation.length();
+
+    commands.spawn((
+        Camera3dBundle {
+            transform: Transform::from_translation(translation).looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
-        })
-        .insert(OrbitCameraBundle::new(
-            OrbitCameraController {
-                mouse_rotate_sensitivity: Vec2::ONE,
-                mouse_translate_sensitivity: Vec2::ONE * 0.5,
-                ..default()
-            },
-            Vec3::new(-20.0, 10.0, 20.0),
-            Vec3::ZERO,
-        ))
-        .insert(Name::new("Camera3d"));
+        },
+        PanOrbitCamera {
+            radius,
+            ..Default::default()
+        },
+    ));
+    // commands
+    //     .spawn(Camera3dBundle {
+    //         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+    //         ..default()
+    //     })
+    //     .insert(OrbitCameraBundle::new(
+    //         OrbitCameraController {
+    //             mouse_rotate_sensitivity: Vec2::ONE,
+    //             mouse_translate_sensitivity: Vec2::ONE * 0.5,
+    //             ..default()
+    //         },
+    //         Vec3::new(-20.0, 10.0, 20.0),
+    //         Vec3::ZERO,
+    //     ))
+    //     .insert(Name::new("Camera3d"));
 
     let mut i = 0;
 
@@ -41,7 +117,11 @@ pub fn setup(
     while i < 10 {
         commands.spawn((
             PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::UVSphere { radius: 2.0, sectors: 100, stacks: 100 })),
+                mesh: meshes.add(Mesh::from(shape::UVSphere {
+                    radius: 2.0,
+                    sectors: 100,
+                    stacks: 100,
+                })),
                 material: debug_material.clone(),
                 transform: Transform::from_xyz(i as f32 * 10.0, 0.5, 0.0).with_rotation(Quat::from_rotation_x(-PI / 4.)),
                 ..default()
@@ -60,8 +140,8 @@ fn uv_debug_texture() -> Image {
     const TEXTURE_SIZE: usize = 8;
 
     let mut palette: [u8; 32] = [
-        255, 102, 159, 255, 255, 159, 102, 255, 236, 255, 102, 255, 121, 255, 102, 255, 102, 255,
-        198, 255, 102, 198, 255, 255, 121, 102, 255, 255, 236, 102, 255, 255,
+        255, 102, 159, 255, 255, 159, 102, 255, 236, 255, 102, 255, 121, 255, 102, 255, 102, 255, 198, 255, 102, 198, 255, 255,
+        121, 102, 255, 255, 236, 102, 255, 255,
     ];
 
     let mut texture_data = [0; TEXTURE_SIZE * TEXTURE_SIZE * 4];
@@ -91,11 +171,7 @@ pub fn greet_galaxy(query: Query<&NameComponent, With<Galaxy>>) {
 }
 
 #[no_mangle]
-pub fn player_movement_system(
-    keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&Player, &mut Transform)>,
-    time: Res<Time>,
-) {
+pub fn player_movement_system(keyboard_input: Res<Input<KeyCode>>, mut query: Query<(&Player, &mut Transform)>, time: Res<Time>) {
     const SPEED: f32 = 300.0;
 
     let (ship, mut transform) = query.single_mut();
@@ -134,9 +210,7 @@ pub fn player_movement_system(
 
 #[no_mangle]
 pub fn player_shooting_system(
-    mut commands: Commands,
-    keyboard_input: Res<Input<KeyCode>>,
-    query: Query<&Transform, With<Player>>,
+    mut commands: Commands, keyboard_input: Res<Input<KeyCode>>, query: Query<&Transform, With<Player>>,
 ) {
     const SIZE: f32 = 10.0;
 
@@ -159,27 +233,17 @@ pub fn player_shooting_system(
 
 #[no_mangle]
 pub fn bullet_movement_system(
-    mut commands: Commands,
-    mut query: Query<(Entity, &mut Transform), With<Bullet>>,
-    cam: Query<&Camera>,
-    time: Res<Time>,
+    mut commands: Commands, mut query: Query<(Entity, &mut Transform), With<Bullet>>, cam: Query<&Camera>, time: Res<Time>,
 ) {
     let screen_size = cam.single().logical_viewport_size().unwrap() * 0.5;
     let speed = 800.0;
     for (entity, mut tfm) in &mut query {
-        let x = tfm
-            .rotation
-            .mul_vec3(Vec3::new(0.0, speed * time.delta_seconds(), 0.0));
+        let x = tfm.rotation.mul_vec3(Vec3::new(0.0, speed * time.delta_seconds(), 0.0));
         tfm.translation += x;
 
         if utilities::is_outside_bounds(
             tfm.translation.truncate(),
-            (
-                (-screen_size.x),
-                screen_size.y,
-                screen_size.x,
-                (-screen_size.y),
-            ),
+            ((-screen_size.x), screen_size.y, screen_size.x, (-screen_size.y)),
         ) {
             log::info!("pufff");
             commands.entity(entity).despawn();
@@ -189,19 +253,13 @@ pub fn bullet_movement_system(
 
 #[no_mangle]
 pub fn bullet_hit_system(
-    mut commands: Commands,
-    bullet_query: Query<&Transform, With<Bullet>>,
+    mut commands: Commands, bullet_query: Query<&Transform, With<Bullet>>,
     ship_query: Query<(Entity, &Transform), With<OtherShip>>,
 ) {
     for bullet_tfm in bullet_query.iter() {
         for (entity, ship_tfm) in ship_query.iter() {
-            if collide_aabb::collide(
-                bullet_tfm.translation,
-                Vec2::new(10.0, 10.0),
-                ship_tfm.translation,
-                Vec2::new(30.0, 30.0),
-            )
-            .is_some()
+            if collide_aabb::collide(bullet_tfm.translation, Vec2::new(10.0, 10.0), ship_tfm.translation, Vec2::new(30.0, 30.0))
+                .is_some()
             {
                 log::info!("BUUMMMM");
                 commands.entity(entity).despawn();
@@ -212,9 +270,7 @@ pub fn bullet_hit_system(
 
 #[no_mangle]
 pub fn spawn_other_ships(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    others: Query<(Entity, &Transform), With<OtherShip>>,
+    mut commands: Commands, asset_server: Res<AssetServer>, others: Query<(Entity, &Transform), With<OtherShip>>,
     cam: Query<&Camera>,
 ) {
     const MARGIN: f32 = 30.0;
@@ -226,12 +282,7 @@ pub fn spawn_other_ships(
     for (entity, tfm) in others.iter() {
         if utilities::is_outside_bounds(
             tfm.translation.truncate(),
-            (
-                (-screen_size.x) - MARGIN,
-                screen_size.y + MARGIN,
-                screen_size.x + MARGIN,
-                (-screen_size.y) - MARGIN,
-            ),
+            ((-screen_size.x) - MARGIN, screen_size.y + MARGIN, screen_size.x + MARGIN, (-screen_size.y) - MARGIN),
         ) {
             commands.entity(entity).despawn();
         } else {
@@ -268,9 +319,7 @@ pub fn spawn_other_ships(
 pub fn move_other_ships(time: Res<Time>, mut query: Query<&mut Transform, With<OtherShip>>) {
     const SPEED: f32 = 100.0;
     for mut tfm in &mut query {
-        let x = tfm
-            .rotation
-            .mul_vec3(Vec3::new(0.0, SPEED * time.delta_seconds(), 0.0));
+        let x = tfm.rotation.mul_vec3(Vec3::new(0.0, SPEED * time.delta_seconds(), 0.0));
 
         tfm.translation += x;
     }
