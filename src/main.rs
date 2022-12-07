@@ -26,7 +26,7 @@ fn main() {
         window: WindowDescriptor {
             width: 800.0,
             height: 800.0,
-            title: "Sim Game".to_string(),
+            title: "Sim Gamesasfss".to_string(),
             ..Default::default()
         },
         ..default()
