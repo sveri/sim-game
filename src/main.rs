@@ -1,4 +1,5 @@
 mod components;
+mod playground;
 mod systems;
 mod utils;
 
@@ -23,6 +24,6 @@ fn main() {
     }))
     .add_plugin(fps::ScreenDiagsPlugin)
     .add_plugin(camera::PanOrbitCameraPlugin)
-    .add_startup_system(systems::setup);
+    .add_startup_system(playground::crossing_uv_spheres::setup);
     app.run();
 }
