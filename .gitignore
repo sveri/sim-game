@@ -1,6 +1,6 @@
 target
 Cargo.lock
-/assets
+/assets/textures
 
 .idea
 /target-bin/
