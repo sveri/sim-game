@@ -1,19 +1,15 @@
-use std::f32::consts::PI;
 
 use bevy::{
-    input::mouse::{MouseMotion, MouseWheel},
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
-use crate::{components::{NameComponent}, utils::camera::{PanOrbitCamera, self}};
+use crate::{components::{NameComponent}};
 
 pub fn setup(
     mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-
-    camera::spawn_pan_orbit_camera(&mut commands);
 
     create_spheres(20, &mut commands, &mut meshes, &mut images, &mut materials, 0);
     create_spheres(20, &mut commands, &mut meshes, &mut images, &mut materials, 1);

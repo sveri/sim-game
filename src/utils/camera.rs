@@ -1,6 +1,11 @@
-use bevy::{prelude::{Component, Vec3, Camera3dBundle, Transform, Commands, Quat, Projection, Vec2, Mat3, Res, EventReader, Query, MouseButton, Input}, window::Windows, input::mouse::{MouseMotion, MouseWheel}};
-
-
+use bevy::{
+    input::mouse::{MouseMotion, MouseWheel},
+    prelude::{
+        App, Camera3dBundle, Commands, Component, EventReader, Input, Mat3, MouseButton, Plugin, Projection, Quat, Query, Res,
+        Transform, Vec2, Vec3,
+    },
+    window::Windows,
+};
 
 #[derive(Component)]
 pub struct PanOrbitCamera {
@@ -19,9 +24,14 @@ impl Default for PanOrbitCamera {
     }
 }
 
+pub struct PanOrbitCameraPlugin;
 
-pub(crate) fn spawn_pan_orbit_camera(commands: &mut Commands) {
-    
+impl Plugin for PanOrbitCameraPlugin {
+    fn build(&self, app: &mut App) { app.add_startup_system(setup).add_system(pan_orbit_camera); }
+}
+
+pub fn setup(mut commands: Commands) {
+
     let translation = Vec3::new(-2.0, 2.5, 5.0);
     let radius = translation.length();
 
@@ -36,8 +46,6 @@ pub(crate) fn spawn_pan_orbit_camera(commands: &mut Commands) {
         },
     ));
 }
-
-
 
 pub fn pan_orbit_camera(
     windows: Res<Windows>, mut ev_motion: EventReader<MouseMotion>, mut ev_scroll: EventReader<MouseWheel>,
@@ -93,7 +101,7 @@ pub fn pan_orbit_camera(
             let yaw = Quat::from_rotation_y(-delta_x);
             let pitch = Quat::from_rotation_x(-delta_y);
             transform.rotation = yaw * transform.rotation; // rotate around global y axis
-            transform.rotation = transform.rotation * pitch; // rotate around local x axis
+            transform.rotation *= pitch; // rotate around local x axis
         } else if pan.length_squared() > 0.0 {
             any = true;
             // make panning distance independent of resolution and FOV,

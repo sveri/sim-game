@@ -1,27 +1,14 @@
 mod components;
-mod utils;
 mod systems;
+mod utils;
 
-use bevy::{diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin}, prelude::*};
+use bevy::{
+    prelude::*,
+};
 
 use bevy_inspector_egui::WorldInspectorPlugin;
 
-use utils::{fps, camera};
-
-// use smooth_bevy_cameras::{LookTransform, LookTransformPlugin, controllers::orbit::{OrbitCameraPlugin}};
-
-// pub struct TestPlugin;
-
-// impl Plugin for TestPlugin {
-//     fn build(&self, app: &mut App) {
-//         app.add_startup_system(systems::setup)
-//         .add_system(systems::pan_orbit_camera)
-//         // .add_plugin(OrbitCameraPlugin::default())
-//         // .add_system(move_camera_system)
-//             // .add_system(greet_galaxy)
-//             ;
-//     }
-// }
+use utils::{camera, fps};
 
 fn main() {
     let mut app = App::new();
@@ -35,9 +22,7 @@ fn main() {
         ..default()
     }))
     .add_plugin(fps::ScreenDiagsPlugin)
-        .add_startup_system(systems::setup)
-        .add_system(camera::pan_orbit_camera)
-        // .add_system(systems::pan_orbit_camera);
-        ;
+    .add_plugin(camera::PanOrbitCameraPlugin)
+    .add_startup_system(systems::setup);
     app.run();
 }
