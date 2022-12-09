@@ -6,7 +6,7 @@ use bevy::{diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin}, prelu
 
 use bevy_inspector_egui::WorldInspectorPlugin;
 
-use utils::fps;
+use utils::{fps, camera};
 
 // use smooth_bevy_cameras::{LookTransform, LookTransformPlugin, controllers::orbit::{OrbitCameraPlugin}};
 
@@ -36,7 +36,7 @@ fn main() {
     }))
     .add_plugin(fps::ScreenDiagsPlugin)
         .add_startup_system(systems::setup)
-        .add_system(systems::pan_orbit_camera)
+        .add_system(camera::pan_orbit_camera)
         // .add_system(systems::pan_orbit_camera);
         ;
     app.run();
